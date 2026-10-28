@@ -24,3 +24,14 @@ Thumbs.db
 # Prisma local database files
 *.db
 *.db-journal
+# Generated Prisma client (regenerate with Prisma)
+backend/generated/prisma/
+
+# Generated Prisma skill files
+backend/.agents/
+backend/.claude/
+backend/.cursor/
+backend/.devin/
+
+# TypeScript incremental build cache
+backend/*.tsbuildinfo

@@ -1,0 +1,175 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum GroupRole {
+  OWNER
+  MEMBER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @db.VarChar(255)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions       RefreshToken[]
+  memberships    GroupMember[]
+  createdGroups  Group[]       @relation("GroupOwner")
+  createdExpenses Expense[]    @relation("ExpenseCreator")
+  paidExpenses   Expense[]     @relation("ExpensePayer")
+  expenseSplits  ExpenseSplit[]
+  settlementsSent     Settlement[] @relation("SettlementPayer")
+  settlementsReceived Settlement[] @relation("SettlementReceiver")
+  activities     ActivityLog[] @relation("ActivityActor")
+
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  members     GroupMember[]
+  expenses    Expense[]
+  settlements Settlement[]
+  activities  ActivityLog[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model GroupMember {
+  id       String    @id @default(cuid())
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  groupId String
+  userId  String
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+enum SplitType {
+  EQUAL
+  CUSTOM
+}
+
+enum ActivityAction {
+  GROUP_CREATED
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  SETTLEMENT_CREATED
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  description String   @db.VarChar(255)
+  amountPaise Int
+  expenseDate DateTime
+  splitType   SplitType
+  deletedAt   DateTime?
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  groupId   String
+  creatorId String
+  payerId   String
+
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator User  @relation("ExpenseCreator", fields: [creatorId], references: [id], onDelete: Restrict)
+  payer   User  @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Restrict)
+
+  splits ExpenseSplit[]
+
+  @@index([groupId, expenseDate])
+  @@index([groupId, amountPaise])
+  @@index([creatorId])
+  @@index([payerId])
+}
+
+model ExpenseSplit {
+  id         String @id @default(cuid())
+  sharePaise Int
+
+  expenseId String
+  userId    String
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([expenseId, userId])
+  @@index([userId])
+}
+
+model Settlement {
+  id          String   @id @default(cuid())
+  amountPaise Int
+  note        String?  @db.VarChar(255)
+  settledAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  groupId    String
+  payerId    String
+  receiverId String
+
+  group    Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  payer    User  @relation("SettlementPayer", fields: [payerId], references: [id], onDelete: Restrict)
+  receiver User  @relation("SettlementReceiver", fields: [receiverId], references: [id], onDelete: Restrict)
+
+  @@index([groupId, settledAt])
+  @@index([payerId])
+  @@index([receiverId])
+}
+
+model ActivityLog {
+  id        String         @id @default(cuid())
+  action    ActivityAction
+  details   Json?
+  createdAt DateTime       @default(now())
+
+  groupId String
+  actorId String?
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  actor User? @relation("ActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([groupId, createdAt])
+  @@index([actorId, createdAt])
+}
