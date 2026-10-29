@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
-import api from '../api/axios';
+import api, { initializeCsrf } from '../api/axios';
 import { configureTokenHandler } from '../api/tokenHandler';
 
 export interface AuthUser {
@@ -128,8 +128,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function restoreSession() {
-      try {
-        const response = await refreshSession();
+            try {
+        await api.get('/auth/csrf');
+
+        await initializeCsrf();
+
+          const response = await refreshSession();
         const { accessToken: token, user: loggedInUser } = response.data;
 
         if (token && loggedInUser && !cancelled) {

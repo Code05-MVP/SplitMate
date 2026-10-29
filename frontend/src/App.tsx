@@ -8,6 +8,7 @@ import GroupsPage from './pages/GroupsPage';
 import { useEffect, useState } from 'react';
 import { createRealtimeSocket } from './realtime/socket';
 import api from './api/axios';
+import ActivityPage from './pages/ActivityPage';
 
 function HomePage() {
   const { user, accessToken, isAuthenticated, isLoading, logout } = useAuth();
@@ -133,7 +134,7 @@ useEffect(() => {
         <nav>
           <a href="#dashboard">Dashboard</a>
           <Link to="/groups">My Groups</Link>
-          <a href="#activity">Activity</a>
+          <Link to="/activity">Activity</Link>
         </nav>
 
         {isLoading ? (
@@ -342,6 +343,7 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/groups" element={<GroupsPage />} />
+      <Route path="/activity" element={<ActivityPage />} />
     </Routes>
   );
 }

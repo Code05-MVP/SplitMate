@@ -18,8 +18,8 @@ const api = axios.create({
   },
 });
 
-// Separate instance prevents the refresh request from
-// triggering the same response interceptor recursively.
+// Separate instance prevents refresh requests from recursively
+// triggering the main response interceptor.
 const refreshApi = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -27,6 +27,17 @@ const refreshApi = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+export async function initializeCsrf(): Promise<void> {
+  const response = await refreshApi.get<{ csrfToken: string }>('/auth/csrf');
+
+  if (!response.data.csrfToken) {
+    throw new Error('CSRF initialization did not return a token.');
+  }
+
+  setCsrfToken(response.data.csrfToken);
+}
+
 
 interface RefreshResponse {
   accessToken: string;
@@ -43,18 +54,49 @@ interface RetryConfig extends InternalAxiosRequestConfig {
 
 let refreshPromise: Promise<string> | null = null;
 
+ 
+let csrfToken: string | null = null;
+
+function setCsrfToken(token: string | null): void {
+  csrfToken = token;
+}
+
+function addCsrfHeader(
+  config: InternalAxiosRequestConfig,
+): InternalAxiosRequestConfig {
+  const method = (config.method ?? 'get').toLowerCase();
+  const isStateChanging = ['post', 'put', 'patch', 'delete'].includes(method);
+
+  if (isStateChanging && csrfToken) {
+    config.headers.set('X-CSRF-Token', csrfToken);
+  }
+
+  return config;
+}
+
+
 api.interceptors.request.use((config) => {
   const token = readAccessToken();
 
   if (token && !config.headers.Authorization) {
-  config.headers.Authorization = `Bearer ${token}`;
-}
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
-  return config;
+  return addCsrfHeader(config);
 });
 
+refreshApi.interceptors.request.use((config) => addCsrfHeader(config));
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const returnedCsrfToken = response.data?.csrfToken;
+
+    if (typeof returnedCsrfToken === 'string' && returnedCsrfToken.length > 0) {
+      setCsrfToken(returnedCsrfToken);
+    }
+
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryConfig | undefined;
     const requestUrl = originalRequest?.url ?? '';
