@@ -256,6 +256,9 @@ const [activityError, setActivityError] = useState('');
   }
 
   const isOwner = user?.id === group.ownerId;
+  console.log('Logged-in user ID:', user?.id);
+console.log('Group owner ID:', group.ownerId);
+console.log('Is owner:', isOwner);
 
   return (
     <main className="groups-page group-details-page">

@@ -118,34 +118,39 @@ export default function GroupsPage() {
 
   return (
     <main className="groups-page">
+      <header className="groups-page-header">
+        <div>
+          <Link to="/" className="groups-back-link">
+            ← Back to Dashboard
+          </Link>
 
-<header className="groups-page-header">
-  <div>
-    <Link to="/" className="groups-back-link">
-      ← Back to Dashboard
-    </Link>
-    <h1>My Groups</h1>
-    <p>Manage shared expenses with friends and family.</p>
-  </div>
+          <h1>My Groups</h1>
+          <p>Manage shared expenses with friends and family.</p>
+        </div>
 
-  <button
-    type="button"
-    onClick={() => {
-      setShowForm((current) => !current);
-      setFormError('');
-    }}
-  >
-    {showForm ? 'Cancel' : '+ Create Group'}
-  </button>
-</header>
-
+        <button
+          type="button"
+          className="create-group-button"
+          onClick={() => {
+            setShowForm((current) => !current);
+            setFormError('');
+          }}
+        >
+          {showForm ? 'Cancel' : '+ Create Group'}
+        </button>
+      </header>
 
       {success && (
-        <p className="groups-success" role="status">{success}</p>
+        <p className="groups-success" role="status">
+          {success}
+        </p>
       )}
 
       {showForm && (
-        <form className="create-group-form" onSubmit={handleCreateGroup}>
+        <form
+          className="create-group-panel"
+          onSubmit={handleCreateGroup}
+        >
           <h2>Create a group</h2>
 
           <label htmlFor="group-name">Group name</label>
@@ -159,7 +164,10 @@ export default function GroupsPage() {
             required
           />
 
-          <label htmlFor="group-description">Description (optional)</label>
+          <label htmlFor="group-description">
+            Description (optional)
+          </label>
+
           <textarea
             id="group-description"
             value={description}
@@ -170,7 +178,9 @@ export default function GroupsPage() {
           />
 
           {formError && (
-            <p className="groups-error" role="alert">{formError}</p>
+            <p className="groups-error" role="alert">
+              {formError}
+            </p>
           )}
 
           <button type="submit" disabled={creating}>
@@ -180,24 +190,34 @@ export default function GroupsPage() {
       )}
 
       {error && (
-        <p className="groups-error" role="alert">{error}</p>
+        <p className="groups-error" role="alert">
+          {error}
+        </p>
       )}
 
       {loading ? (
         <p>Loading your groups...</p>
       ) : groups.length === 0 ? (
         <section className="groups-empty">
-          <h2>No groups yet</h2>
-          <p>Create your first group to start splitting expenses.</p>
-          <button type="button" onClick={() => setShowForm(true)}>
-            Create your first group
-          </button>
-        </section>
+  <div className="groups-empty-icon">♧</div>
+
+  <h2>No groups yet</h2>
+
+  <p>
+    Create your first group to start splitting expenses with friends
+    and family.
+  </p>
+</section>
       ) : (
         <div className="groups-grid">
           {groups.map((group) => (
-            <article className="group-card compact-group-card" key={group.id}>
-              <div className="group-card-icon" aria-hidden="true">♧</div>
+            <article
+              className="group-card compact-group-card"
+              key={group.id}
+            >
+              <div className="group-card-icon" aria-hidden="true">
+                ♧
+              </div>
 
               <h2>{group.name}</h2>
 
@@ -210,6 +230,7 @@ export default function GroupsPage() {
                   {group.members.length}{' '}
                   {group.members.length === 1 ? 'member' : 'members'}
                 </span>
+
                 <span>
                   Created {new Date(group.createdAt).toLocaleDateString()}
                 </span>

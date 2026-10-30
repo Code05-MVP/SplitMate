@@ -2413,3 +2413,252 @@ footer {
   overflow-wrap: anywhere;
   word-break: normal;
 }
+
+/* ================================
+   CREATE GROUP FORM
+================================ */
+
+.create-group-panel {
+  width: 100%;
+  max-width: 930px;
+  margin: 48px 0;
+  padding: 40px;
+  background: #ffffff;
+  border: 1px solid #e4e0ff;
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.create-group-panel h2 {
+  margin: 0 0 4px;
+  color: #111827;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.create-group-panel label {
+  display: block;
+  margin-bottom: -6px;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.create-group-panel input,
+.create-group-panel textarea {
+  width: 100%;
+  padding: 16px 20px;
+  border: 1px solid #d8d5ee;
+  border-radius: 15px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 17px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.create-group-panel input {
+  min-height: 62px;
+}
+
+.create-group-panel textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.create-group-panel input:focus,
+.create-group-panel textarea:focus {
+  border-color: #6254f5;
+  box-shadow: 0 0 0 3px rgba(98, 84, 245, 0.12);
+}
+
+.create-group-panel input::placeholder,
+.create-group-panel textarea::placeholder {
+  color: #8991a3;
+}
+
+/* Submit button */
+
+.create-group-panel button[type="submit"] {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 12px;
+  background: #6254f5;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.create-group-panel button[type="submit"]:hover:not(:disabled) {
+  background: #5142df;
+  transform: translateY(-2px);
+}
+
+.create-group-panel button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Header and empty-state buttons */
+
+.create-group-button {
+  padding: 15px 28px;
+  border: none;
+  border-radius: 16px;
+  background: #6254f5;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.create-group-button:hover {
+  background: #5142df;
+  transform: translateY(-2px);
+}
+
+/* Error and success messages */
+
+.groups-error {
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.groups-success {
+  color: #15803d;
+  font-size: 15px;
+}
+
+/* Responsive layout */
+
+@media (max-width: 600px) {
+  .create-group-panel {
+    padding: 24px 18px;
+    margin: 28px 0;
+    border-radius: 18px;
+  }
+
+  .create-group-panel h2 {
+    font-size: 23px;
+  }
+
+  .create-group-button {
+    padding: 12px 18px;
+    font-size: 15px;
+  }
+}
+
+/* ================================
+   GROUP MANAGEMENT
+================================ */
+
+
+.group-delete-actions {
+display: flex;
+justify-content: flex-start;
+margin-top: 24px;
+padding-top: 20px;
+border-top: 1px solid #eee9f5;
+}
+
+.danger-button {
+padding: 13px 24px;
+border: 1px solid #dc2626;
+border-radius: 12px;
+background: #ffffff;
+color: #dc2626;
+font-size: 15px;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.2s ease;
+}
+
+.danger-button:hover:not(:disabled) {
+background: #dc2626;
+color: #ffffff;
+}
+
+.danger-button:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+.group-details-section {
+margin-top: 32px;
+}
+
+/* ================================
+   GROUPS EMPTY STATE
+================================ */
+
+.groups-empty {
+  width: 100%;
+  max-width: 760px;
+  min-height: 240px;
+  margin: 55px auto 0;
+  padding: 45px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #e8e5f5;
+  border-radius: 24px;
+  box-sizing: border-box;
+}
+
+.groups-empty-icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  border-radius: 18px;
+  background: #f0edff;
+  color: #6254f5;
+  font-size: 30px;
+}
+
+.groups-empty h2 {
+  margin: 0 0 12px;
+  color: #111827;
+  font-size: 26px;
+  font-weight: 650;
+}
+
+.groups-empty p {
+  max-width: 480px;
+  margin: 0;
+  color: #667085;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .groups-empty {
+    min-height: 200px;
+    margin-top: 32px;
+    padding: 30px 18px;
+  }
+
+  .groups-empty h2 {
+    font-size: 22px;
+  }
+
+  .groups-empty p {
+    font-size: 15px;
+  }
+}
+

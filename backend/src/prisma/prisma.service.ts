@@ -16,14 +16,15 @@ export class PrismaService
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME ?? 'splitmate',
       connectionLimit: 5,
+      allowPublicKeyRetrieval: true,
     });
 
     super({ adapter });
   }
 
   async onModuleInit() {
-  await this.$connect();
-  console.log('✅ SplitMate database connected successfully!');
+    await this.$connect();
+    console.log('✅ SplitMate database connected successfully!');
   }
 
   async onModuleDestroy() {
