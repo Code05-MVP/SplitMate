@@ -1,46 +1,81 @@
 # SplitMate
 
-SplitMate is a shared-expense management application that helps people organize group expenses, split costs fairlyGood! Your Git check confirms that **`backend/.env`** is protected from being committed, and both project folders (**`backend/`** and **`frontend/`**) are ready to be added to Git.
+SplitMate is a full-stack shared-expense management application that helps people organize group expenses, split costs fairly, track balances, and manage settlements.
 
-The **`??`** means **untracked**: Git sees these folders, but they haven't been included in a commit yet. That's normal for newly created project files.
-
-Before committing, let's update the root **`README.md`** so your GitHub repository has clear, professional setup instructions., track balances, and manage settlements.
+It provides group management, equal and custom expense splitting, balance calculations, activity tracking, and real-time updates so that group members stay synchronized.
 
 ## Technology Stack
 
 ### Frontend
-
-- React with Vite
+- React
+- Vite
 - TypeScript
 - Tailwind CSS
 - React Router
-- Axios and TanStack Query
+- Axios
+- TanStack Query
+- React Context API
 
 ### Backend
-
-- NestJS and TypeScript
+- NestJS
+- TypeScript
 - Prisma ORM
 - MySQL
 - Argon2id password hashing
-- JWT-based authentication
-- Socket.IO for real-time communication
+- JWT authentication
+- Socket.IO
 
 ### Testing and API Documentation
-
-- Jest and Supertest
-- Vitest and React Testing Library
+- Jest
+- Supertest
+- Vitest
+- React Testing Library
 - Swagger / OpenAPI
 - Postman
+
+## Key Features
+
+- User registration and authentication.
+- Secure password hashing using Argon2id.
+- JWT-based authentication with access-token refresh.
+- HttpOnly refresh-token cookies and short-lived access tokens.
+- Group creation and member management.
+- Equal and custom expense splitting.
+- Expense creation, editing, and deletion.
+- Group balance calculation.
+- Simplified debt calculations.
+- Manual partial and full settlements.
+- Personal and group activity history.
+- Dashboard with overall financial summaries.
+- Real-time expense, balance, and activity updates.
+- Automatic WebSocket reconnection and recovery.
 
 ## Project Structure
 
 ```text
 SplitMate/
-├── backend/       # NestJS API and database
-│   ├── prisma/    # Schema, migrations and seed script
-│   └── src/       # Backend application
-├── frontend/      # React + Vite application
+├── backend/
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   ├── migrations/
+│   │   └── seed.ts
+│   └── src/
+│       ├── auth/
+│       ├── groups/
+│       ├── expenses/
+│       ├── settlements/
+│       └── realtime/
+│
+├── frontend/
+│   └── src/
+│       ├── components/
+│       ├── pages/
+│       ├── context/
+│       ├── api/
+│       └── realtime/
+│
 ├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
@@ -58,15 +93,15 @@ Install the following before running the project:
 ### 1. Clone the repository
 
 ```powershell
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone https://github.com/Code05-MVP/SplitMate.git
 cd SplitMate
 ```
 
-Replace the placeholder with your actual GitHub repository URL.
 
-### 2. Configure the database
 
-Create a MySQL database named `splitmate` using MySQL Workbench or your MySQL client:
+### 2. Create the database
+
+Create a MySQL database named `splitmate`.
 
 ```sql
 CREATE DATABASE splitmate;
@@ -74,41 +109,83 @@ CREATE DATABASE splitmate;
 
 ### 3. Configure the backend
 
+Navigate to the backend directory:
+
 ```powershell
 cd backend
 npm install
+```
+
+Create your local environment file:
+
+```powershell
 Copy-Item .env.example .env
 ```
 
-Open `backend/.env` and replace the placeholder values with your local MySQL credentials and a strong, private demo password.
+Configure the required values in `backend/.env`, including:
 
-Do not commit `.env` or share its secrets.
+- MySQL connection details.
+- JWT authentication secrets.
+- Refresh-token configuration.
+- `SEED_DEMO_PASSWORD`.
 
-### 4. Apply database migrations and seed demo data
+Use secure values for your local environment. The demo password must contain at least 12 characters.
 
-Run these commands from the `backend` directory:
+Never commit your `.env` file or expose credentials and authentication secrets.
+
+### 4. Apply database migrations
+
+Run the following commands from the `backend` directory:
 
 ```powershell
 npx prisma migrate deploy
 npx prisma generate
+```
+
+These commands apply the existing database migrations and generate the Prisma Client.
+
+### 5. Seed demo data
+
+Run:
+
+```powershell
 npm run db:seed
 ```
 
-The seed script creates or verifies two demo users and a demo group. Set `SEED_DEMO_PASSWORD` in your local `.env` before running it. Existing demo-user passwords are not changed by the seed script.
+The seed script creates or verifies the following demo data:
 
-### 5. Start the backend
+| Name | Email | Role |
+|---|---|---|
+| Aarav Sharma | aarav.demo@splitmate.local | Owner |
+| Priya Patel | priya.demo@splitmate.local | Member |
 
-In the `backend` directory:
+It also creates or verifies the group:
+
+**Demo Shared Expenses**
+
+The seed script:
+- Uses Argon2id to hash the demo password.
+- Uses Prisma `upsert` to avoid duplicate demo users and memberships.
+- Preserves existing demo-user passwords.
+- Ensures both demo accounts belong to the demo group.
+
+**Note:** The current seed script creates demo users, a group, and group memberships. It does not create sample expenses or settlements.
+
+### 6. Start the backend
+
+From the `backend` directory:
 
 ```powershell
 npm run start:dev
 ```
 
-The backend is expected to run at `http://localhost:3000`.
+The backend is expected to run at:
 
-### 6. Start the frontend
+`http://localhost:3000`
 
-Open a second terminal at the project root:
+### 7. Start the frontend
+
+Open a second terminal from the project root:
 
 ```powershell
 cd frontend
@@ -116,27 +193,89 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5173`.
+Open the local URL provided by Vite, normally:
+
+`http://localhost:5173`
 
 ## Data and Security Design
 
-- Monetary values are stored as integer paise to avoid floating-point rounding errors.
+### Monetary Calculations
+
+- Monetary values are stored as integer paise.
+- Integer-based calculations avoid floating-point precision problems.
+- Rupee values are formatted for display in the frontend.
+- Equal and custom splits are supported.
+- Leftover paise are distributed deterministically.
+
+### Authentication
+
 - Passwords are hashed using Argon2id.
-- Refresh-token and access-token handling is designed around short-lived access tokens and refresh-token protection.
-- Prisma migrations manage database schema changes.
-- Database relationships and constraints help maintain data integrity.
-- Group membership and ownership checks are important parts of authorization.
+- Short-lived access tokens are maintained in frontend memory.
+- Refresh tokens are stored in HttpOnly cookies.
+- Refresh tokens are hashed before being stored in MySQL.
+- Refresh-token rotation is implemented.
+- Previous refresh tokens are revoked during rotation.
+- Multiple active sessions are supported.
+- Logout revokes the corresponding refresh token.
+
+### Authorization
+
+- Protected API endpoints require authentication.
+- Group membership is checked before allowing access to group resources.
+- Group ownership and membership permissions are enforced by the backend.
+- WebSocket group subscriptions also validate membership.
+
+### Database Management
+
+- Prisma ORM manages database access.
+- Prisma Migrate manages schema changes.
+- Foreign-key constraints maintain referential integrity.
+- Transactions are used for operations that require coordinated database changes.
+
+## Real-Time Communication
+
+SplitMate uses Socket.IO for real-time communication instead of relying on periodic polling.
+
+### WebSocket Authentication
+
+- Socket connections are authenticated using access tokens.
+- The backend validates the token when a socket connects.
+- The authenticated user ID is associated with the socket.
+- Group membership is checked before allowing a socket to join a group room.
+
+### Group-Based Communication
+
+- Each group has its own Socket.IO room.
+- Clients use the `group:join` event to request access to a group room.
+- The backend verifies membership before accepting the request.
+- Expense, balance, settlement, and activity events are broadcast to relevant group members.
+
+### Reconnection and Recovery
+
+- Automatic Socket.IO reconnection is enabled.
+- If the backend becomes temporarily unavailable, the client attempts to reconnect.
+- After reconnecting, the dashboard requests to join the user's group rooms again.
+- The backend validates group membership before allowing room access.
+- Relevant data is fetched again after reconnection to recover updates missed during disconnection.
+- The dashboard refreshes its balance summary and recent activity.
+- The group expenses component fetches the latest expenses after reconnecting.
+- If the server disconnects a socket because of authentication expiry, the frontend attempts to refresh the access token.
+- If token refresh fails, the application dispatches a session-expired event.
 
 ## Testing
 
-Run backend tests from the `backend` directory:
+### Backend
+
+Run from the `backend` directory:
 
 ```powershell
 npm test
 npm run build
 ```
 
-Run the frontend production build from the `frontend` directory:
+### Frontend
+
+Run from the `frontend` directory:
 
 ```powershell
 npm run build
@@ -144,17 +283,32 @@ npm run build
 
 ## Project Status
 
-SplitMate is under active development. Features, tests, documentation, and end-to-end workflows are being verified as development progresses.
+SplitMate is under active development.
 
-## Demo Preparation
+Core workflows are being implemented and tested, including authentication, group management, expense splitting, balance calculations, settlements, activity history, and real-time communication.
 
-The planned demo covers user authentication, group creation, adding members, equal and custom expense splits, balance updates, settlements, and real-time updates across two browser sessions.
+## Demo Walkthrough
 
-## Environment Variables
+The planned demonstration covers:
 
-Use `backend/.env.example` as the template for local configuration. Never commit actual credentials, access tokens, or other secrets.
+1. Registering and logging in with two users.
+2. Creating a group and adding another member.
+3. Adding equal-split and custom-split expenses.
+4. Viewing group balances and simplified debts.
+5. Editing and deleting expenses.
+6. Recording settlements.
+7. Viewing dashboard summaries and activity history.
+8. Demonstrating real-time updates across two browser sessions.
+9. Testing automatic WebSocket reconnection and recovery.
+
+## Future Improvements
+
+- More comprehensive automated end-to-end testing.
+- Docker-based development environment.
+- Production deployment.
+- Additional expense-splitting options.
+- Performance and security improvements.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE)
-file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

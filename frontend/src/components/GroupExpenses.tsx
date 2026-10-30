@@ -4,6 +4,7 @@ import type { FormEvent } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { createRealtimeSocket } from '../realtime/socket';
+import { readAccessToken } from '../api/tokenHandler';
 
 interface ExpenseMember {
   userId: string;
@@ -78,8 +79,7 @@ function getErrorMessage(err: unknown, fallback: string): string {
 }
 
 function GroupExpenses({ groupId, members }: GroupExpensesProps) {
-    const { accessToken, user } = useAuth();
-
+  const { accessToken, user, refreshAccessToken } = useAuth();
   // Expense history state
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [page, setPage] = useState(1);
@@ -156,35 +156,84 @@ function GroupExpenses({ groupId, members }: GroupExpensesProps) {
   useEffect(() => {
     void fetchExpenses();
   }, [fetchExpenses]);
-  
+
 useEffect(() => {
-  if (!accessToken) {
-    return;
+  if (!accessToken) return;
+
+  const socket = createRealtimeSocket(readAccessToken);
+  const handleDisconnect = (reason: string) => {
+  console.log('[Socket] Disconnected:', reason);
+
+  if (reason === 'io server disconnect') {
+    console.log('[Socket] Refreshing access token...');
+
+    void refreshAccessToken()
+      .then(() => {
+        console.log('[Socket] Access token refreshed successfully.');
+      })
+      .catch((error) => {
+        console.error('[Socket] Token refresh failed:', error);
+
+        window.dispatchEvent(
+          new Event('splitmate:session-expired'),
+        );
+      });
   }
+};
 
-  const socket = createRealtimeSocket(accessToken);
-
+socket.on('disconnect', handleDisconnect);
   socket.on('connect', () => {
+  console.log('[Socket] Connected:', socket.id);
+});
+
+socket.on('disconnect', (reason) => {
+  console.log('[Socket] Disconnected:', reason);
+});
+
+socket.on('connect_error', (error) => {
+  console.error('[Socket] Connection error:', error.message);
+});
+
+socket.io.on('reconnect_attempt', (attempt) => {
+  console.log('[Socket] Reconnection attempt:', attempt);
+});
+
+socket.io.on('reconnect', (attempt) => {
+  console.log('[Socket] Reconnected after attempts:', attempt);
+});
+
+  const joinGroup = () => {
     socket.emit('group:join', { groupId });
-  });
+    // Recover any updates missed while disconnected
+    void fetchExpenses();
+  };
 
   const refreshExpenses = () => {
     void fetchExpenses();
   };
-      
-socket.on('group:expense-created', refreshExpenses);
-socket.on('group:expense-updated', refreshExpenses);
-socket.on('group:expense-deleted', refreshExpenses);
-socket.on('group:balance-updated', refreshExpenses);
-socket.on('group:activity-updated', refreshExpenses);
 
+  socket.on('connect', joinGroup);
+
+  socket.on('group:expense-created', refreshExpenses);
+  socket.on('group:expense-updated', refreshExpenses);
+  socket.on('group:expense-deleted', refreshExpenses);
+  socket.on('group:balance-updated', refreshExpenses);
+  socket.on('group:activity-updated', refreshExpenses);
 
   socket.connect();
 
   return () => {
+    socket.off('connect', joinGroup);
+    socket.off('group:expense-created', refreshExpenses);
+    socket.off('group:expense-updated', refreshExpenses);
+    socket.off('group:expense-deleted', refreshExpenses);
+    socket.off('group:balance-updated', refreshExpenses);
+    socket.off('group:activity-updated', refreshExpenses);
+    socket.off('disconnect', handleDisconnect);
     socket.disconnect();
   };
 }, [accessToken, groupId, fetchExpenses]);
+
 
 
   function toggleMember(userId: string, checked: boolean) {

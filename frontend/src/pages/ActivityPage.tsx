@@ -57,6 +57,7 @@ function ActivityPage() {
   const [error, setError] = useState('');
   const [refreshVersion, setRefreshVersion] = useState(0);
 
+
   useEffect(() => {
     if (authLoading) return;
 

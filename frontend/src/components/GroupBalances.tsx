@@ -4,6 +4,7 @@ import type { FormEvent } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { createRealtimeSocket } from '../realtime/socket';
+import { readAccessToken } from '../api/tokenHandler';
 
 interface GroupBalance {
   userId: string;
@@ -25,7 +26,7 @@ interface GroupBalancesProps {
 }
 
 function GroupBalances({ groupId, members }: GroupBalancesProps) {
-  const { accessToken, user } = useAuth();
+  const { accessToken, user, refreshAccessToken } = useAuth();
 
   const [balances, setBalances] = useState<GroupBalance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,30 +75,59 @@ function GroupBalances({ groupId, members }: GroupBalancesProps) {
   }, [fetchBalances]);
 
   useEffect(() => {
-    if (!accessToken) return;
+  if (!accessToken) return;
 
-    const socket = createRealtimeSocket(accessToken);
+  const socket = createRealtimeSocket(readAccessToken);
 
-    const joinGroup = () => socket.emit('group:join', { groupId });
-    const refreshBalances = () => void fetchBalances();
+  const handleDisconnect = (reason: string) => {
+    console.log('[Balances Socket] Disconnected:', reason);
 
-    socket.on('connect', joinGroup);
-    socket.on('group:balance-updated', refreshBalances);
-    socket.on('group:expense-created', refreshBalances);
-    socket.on('group:expense-updated', refreshBalances);
-    socket.on('group:expense-deleted', refreshBalances);
+    if (reason === 'io server disconnect') {
+      console.log('[Balances Socket] Refreshing access token...');
 
-    socket.connect();
+      void refreshAccessToken()
+        .then(() => {
+          console.log('[Balances Socket] Access token refreshed.');
+        })
+        .catch((error) => {
+          console.error('[Balances Socket] Token refresh failed:', error);
 
-    return () => {
-      socket.off('connect', joinGroup);
-      socket.off('group:balance-updated', refreshBalances);
-      socket.off('group:expense-created', refreshBalances);
-      socket.off('group:expense-updated', refreshBalances);
-      socket.off('group:expense-deleted', refreshBalances);
-      socket.disconnect();
-    };
-  }, [accessToken, groupId, fetchBalances]);
+          window.dispatchEvent(
+            new Event('splitmate:session-expired'),
+          );
+        });
+    }
+  };
+
+  const joinGroup = () => {
+    socket.emit('group:join', { groupId });
+    void fetchBalances();
+  };
+
+  const refreshBalances = () => {
+    void fetchBalances();
+  };
+
+  socket.on('disconnect', handleDisconnect);
+  socket.on('connect', joinGroup);
+
+  socket.on('group:balance-updated', refreshBalances);
+  socket.on('group:expense-created', refreshBalances);
+  socket.on('group:expense-updated', refreshBalances);
+  socket.on('group:expense-deleted', refreshBalances);
+
+  socket.connect();
+
+  return () => {
+    socket.off('disconnect', handleDisconnect);
+    socket.off('connect', joinGroup);
+    socket.off('group:balance-updated', refreshBalances);
+    socket.off('group:expense-created', refreshBalances);
+    socket.off('group:expense-updated', refreshBalances);
+    socket.off('group:expense-deleted', refreshBalances);
+    socket.disconnect();
+  };
+}, [accessToken, groupId, fetchBalances, refreshAccessToken]);
 
   async function handleSettlement(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

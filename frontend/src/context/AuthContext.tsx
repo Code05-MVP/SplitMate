@@ -21,8 +21,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (token: string, user: AuthUser) => void;
-  updateAccessToken: (token: string) => void;
-  logout: () => Promise<void>;
+   updateAccessToken: (token: string) => void;
+refreshAccessToken: () => Promise<string>;
+logout: () => Promise<void>;
 }
 
 interface LoginEventDetail {
@@ -67,6 +68,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function updateAccessToken(token: string) {
     setAccessToken(token);
   }
+  async function refreshAccessToken(): Promise<string> {
+  const response = await refreshSession();
+
+  const {
+    accessToken: newToken,
+    user: refreshedUser,
+  } = response.data;
+
+  if (!newToken) {
+    throw new Error('Failed to refresh access token');
+  }
+
+  setAccessToken(newToken);
+  setUser(refreshedUser);
+
+  return newToken;
+}
 
   useEffect(() => {
     configureTokenHandler(
@@ -163,8 +181,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: Boolean(accessToken && user),
         isLoading,
         login,
-        updateAccessToken,
-        logout,
+         updateAccessToken,
+         refreshAccessToken,
+         logout,
       }}
     >
       {children}

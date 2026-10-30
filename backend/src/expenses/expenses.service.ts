@@ -268,11 +268,19 @@ include: {
       throw new NotFoundException('Expense not found');
     }
 
-    if (expense.creatorId !== requesterId) {
-      throw new ForbiddenException(
-        'Only the expense creator can edit it',
-      );
-    }
+    const group = await this.prisma.group.findUnique({
+  where: { id: groupId },
+  select: { ownerId: true },
+});
+
+if (
+  expense.creatorId !== requesterId &&
+  group?.ownerId !== requesterId
+) {
+  throw new ForbiddenException(
+    'Only the expense creator or group owner can edit it',
+  );
+}
 
     const membership = await this.prisma.groupMember.findUnique({
       where: {
@@ -450,11 +458,19 @@ include: {
       throw new NotFoundException('Expense not found');
     }
 
-    if (expense.creatorId !== requesterId) {
-      throw new ForbiddenException(
-        'Only the expense creator can delete it',
-      );
-    }
+               const group = await this.prisma.group.findUnique({
+  where: { id: groupId },
+  select: { ownerId: true },
+});
+
+if (
+  expense.creatorId !== requesterId &&
+  group?.ownerId !== requesterId
+) {
+  throw new ForbiddenException(
+    'Only the expense creator or group owner can delete it',
+  );
+}
 
     const membership = await this.prisma.groupMember.findUnique({
       where: {
