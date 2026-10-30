@@ -62,27 +62,20 @@ async validateCredentials(email: string, password: string) {
     
      let passwordMatches = false;
 
-if (user) {
-      
-                
-  try {
-    passwordMatches = await argon2.verify(
-      user.passwordHash,
-      password,
+    if (user) {
+    try {
+      passwordMatches = await argon2.verify(
+        user.passwordHash,
+        password,
       );
-      
-  } catch (error) {
-    console.error(
-      'Password verification failed:',
-      error instanceof Error ? error.message : 'Unknown error',
-    );
-    throw error;
+    } catch (error) {
+      console.error(
+        'Password verification failed:',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+      throw error;
+    }
   }
-
- 
-} 
-
-  
 
   if (!user || !user.isActive || !passwordMatches) {
     throw new UnauthorizedException('Invalid email or password');

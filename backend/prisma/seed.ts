@@ -35,40 +35,48 @@ async function main() {
 
   const users = [];
 
-  for (const demoUser of demoUsers) {
-    const user = await prisma.user.upsert({
-      where: { email: demoUser.email },
-      update: {},
-      create: {
-        ...demoUser,
-        passwordHash,
-      },
-    });
+             for (const demoUser of demoUsers) {
+  const user = await prisma.user.upsert({
+    where: { email: demoUser.email },
+    update: {
+  passwordHash,
+  isActive: true,
+},
+    create: {
+      ...demoUser,
+      passwordHash,
+    },
+  });
 
-    users.push(user);
-  }
+  users.push(user);
+  console.log(`Login verification for ${demoUser.email}:`, {
+  isActive: user.isActive,
+  passwordMatches: await argon2.verify(
+    user.passwordHash,
+    process.env.SEED_DEMO_PASSWORD!,
+  ),
+});
+}
 
-  const groupName = 'Demo Shared Expenses';
+  const [aarav, priya] = users;
 
   const group = await prisma.group.upsert({
     where: { id: 'splitmate-demo-group' },
     update: {},
     create: {
       id: 'splitmate-demo-group',
-      name: groupName,
+      name: 'Demo Shared Expenses',
       description: 'Demo group for exploring SplitMate',
-      ownerId: users[0].id,
+      ownerId: aarav.id,
       members: {
         create: [
-          { userId: users[0].id, role: 'OWNER' },
-          { userId: users[1].id, role: 'MEMBER' },
+          { userId: aarav.id, role: 'OWNER' },
+          { userId: priya.id, role: 'MEMBER' },
         ],
       },
     },
   });
 
-  // Ensure both demo accounts belong to the demo group,
-  // including when the group already existed.
   for (const [index, user] of users.entries()) {
     await prisma.groupMember.upsert({
       where: {
@@ -86,10 +94,111 @@ async function main() {
     });
   }
 
-  console.log('Seed completed.');
-  console.log(`Demo users: ${demoUsers.map((u) => u.email).join(', ')}`);
+  // Demo expense 1: ₹1,200 split equally.
+  await prisma.expense.upsert({
+    where: { id: 'splitmate-demo-expense-equal' },
+    update: {
+      description: 'Goa hotel booking',
+      amountPaise: 120000,
+      expenseDate: new Date('2026-10-28T12:00:00.000Z'),
+      splitType: 'EQUAL',
+      payerId: aarav.id,
+      creatorId: aarav.id,
+      splits: {
+        deleteMany: {},
+        create: [
+          {
+            sharePaise: 60000,
+            user: { connect: { id: aarav.id } },
+          },
+          {
+            sharePaise: 60000,
+            user: { connect: { id: priya.id } },
+          },
+        ],
+      },
+    },
+    create: {
+      id: 'splitmate-demo-expense-equal',
+      description: 'Goa hotel booking',
+      amountPaise: 120000,
+      expenseDate: new Date('2026-10-28T12:00:00.000Z'),
+      splitType: 'EQUAL',
+      groupId: group.id,
+      creatorId: aarav.id,
+      payerId: aarav.id,
+      splits: {
+        create: [
+          {
+            sharePaise: 60000,
+            user: { connect: { id: aarav.id } },
+          },
+          {
+            sharePaise: 60000,
+            user: { connect: { id: priya.id } },
+          },
+        ],
+      },
+    },
+  });
+
+  // Demo expense 2: ₹900 split using custom shares.
+  await prisma.expense.upsert({
+    where: { id: 'splitmate-demo-expense-custom' },
+    update: {
+      description: 'Dinner and food',
+      amountPaise: 90000,
+      expenseDate: new Date('2026-10-29T12:00:00.000Z'),
+      splitType: 'CUSTOM',
+      payerId: priya.id,
+      creatorId: priya.id,
+      splits: {
+        deleteMany: {},
+        create: [
+          {
+            sharePaise: 30000,
+            user: { connect: { id: aarav.id } },
+          },
+          {
+            sharePaise: 60000,
+            user: { connect: { id: priya.id } },
+          },
+        ],
+      },
+    },
+    create: {
+      id: 'splitmate-demo-expense-custom',
+      description: 'Dinner and food',
+      amountPaise: 90000,
+      expenseDate: new Date('2026-10-29T12:00:00.000Z'),
+      splitType: 'CUSTOM',
+      groupId: group.id,
+      creatorId: priya.id,
+      payerId: priya.id,
+      splits: {
+        create: [
+          {
+            sharePaise: 30000,
+            user: { connect: { id: aarav.id } },
+          },
+          {
+            sharePaise: 60000,
+            user: { connect: { id: priya.id } },
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('Seed completed successfully.');
+  console.log('Demo users:');
+  console.log(`Aarav: ${aarav.email}`);
+  console.log(`Priya: ${priya.email}`);
   console.log(`Demo group: ${group.name}`);
-  console.log('Existing user passwords were not changed.');
+  console.log('Demo expenses:');
+  console.log('1. Goa hotel booking - ₹1,200 (Equal split)');
+  console.log('2. Dinner and food - ₹900 (Custom split)');
+  console.log('Demo user passwords have been reset from SEED_DEMO_PASSWORD.');
 }
 
 main()
