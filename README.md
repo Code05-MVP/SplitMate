@@ -59,20 +59,26 @@ SplitMate/
 │   │   ├── schema.prisma
 │   │   ├── migrations/
 │   │   └── seed.ts
-│   └── src/
-│       ├── auth/
-│       ├── groups/
-│       ├── expenses/
-│       ├── settlements/
-│       └── realtime/
+│   ├── src/
+│   │   ├── auth/
+│   │   ├── groups/
+│   │   ├── expenses/
+│   │   ├── settlements/
+│   │   └── realtime/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── prisma.config.ts
+│   └── .env.example
 │
 ├── frontend/
-│   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── context/
-│       ├── api/
-│       └── realtime/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── context/
+│   │   ├── api/
+│   │   └── realtime/
+│   ├── package.json
+│   └── package-lock.json
 │
 ├── .gitignore
 ├── LICENSE
@@ -88,7 +94,17 @@ Install the following before running the project:
 - MySQL 8
 - Git
 
+You can verify your installations using:
+
+```powershell
+node --version
+npm --version
+git --version
+```
+
 ## Local Setup
+
+Follow these steps to run SplitMate locally.
 
 ### 1. Clone the repository
 
@@ -97,54 +113,81 @@ git clone https://github.com/Code05-MVP/SplitMate.git
 cd SplitMate
 ```
 
+### 2. Install frontend dependencies
 
+Open a terminal in the project root:
 
-### 2. Create the database
+```powershell
+cd frontend
+npm ci
+```
 
-Create a MySQL database named `splitmate`.
+This installs the frontend dependencies using the committed package-lock.json file.
+
+### 3. Install backend dependencies
+
+Open another terminal in the project root:
+
+```powershell
+cd backend
+npm ci
+```
+
+This installs NestJS, Prisma, Prisma Client, the MySQL adapter, Argon2, Socket.IO, and other backend dependencies.
+
+No separate global Prisma installation is required.
+
+### 4. Create the MySQL database
+
+Start your MySQL server and create a database named `splitmate`.
+
+You can execute the following SQL in MySQL Workbench or your MySQL client:
 
 ```sql
 CREATE DATABASE splitmate;
 ```
 
-### 3. Configure the backend
+### 5. Configure environment variables
 
-Navigate to the backend directory:
-
-```powershell
-cd backend
-npm install
-```
-
-Create your local environment file:
+From the backend directory, create your local environment file:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Configure the required values in `backend/.env`, including:
+Open `backend/.env` and configure the required values.
+
+These include:
 
 - MySQL connection details.
 - JWT authentication secrets.
 - Refresh-token configuration.
 - `SEED_DEMO_PASSWORD`.
 
-Use secure values for your local environment. The demo password must contain at least 12 characters.
+Use your own secure local credentials and secrets.
 
-Never commit your `.env` file or expose credentials and authentication secrets.
+The demo password must contain at least 12 characters.
 
-### 4. Apply database migrations
+**Important:** Never commit your `.env` file or expose database credentials, JWT secrets, or other sensitive configuration.
 
-Run the following commands from the `backend` directory:
+The `.env.example` file contains the configuration template required by other developers.
+
+### 6. Generate Prisma Client and apply migrations
+
+Run these commands from the backend directory:
 
 ```powershell
-npx prisma migrate deploy
 npx prisma generate
+npx prisma migrate deploy
 ```
 
-These commands apply the existing database migrations and generate the Prisma Client.
+These commands:
 
-### 5. Seed demo data
+- Generate Prisma Client for database access.
+- Apply the committed database migrations.
+- Prepare the database schema.
+
+### 7. Seed demo data
 
 Run:
 
@@ -152,7 +195,7 @@ Run:
 npm run db:seed
 ```
 
-The seed script creates or verifies the following demo data:
+The seed script creates or updates the following demo users:
 
 | Name | Email | Role |
 |---|---|---|
@@ -163,39 +206,52 @@ It also creates or verifies the group:
 
 **Demo Shared Expenses**
 
+The seed script creates two sample expenses:
+
+| Expense | Amount | Split Type |
+|---|---:|---|
+| Goa hotel booking | ₹1,200 | Equal |
+| Dinner and food | ₹900 | Custom |
+
+Expected initial net balance:
+
+**Priya owes Aarav ₹300.**
+
 The seed script:
 - Uses Argon2id to hash the demo password.
-- Uses Prisma `upsert` to avoid duplicate demo users and memberships.
-- Preserves existing demo-user passwords.
+- Uses Prisma `upsert` to avoid duplicate demo users, memberships, and expenses.
+- Sets both demo users' passwords using `SEED_DEMO_PASSWORD`.
 - Ensures both demo accounts belong to the demo group.
+- Creates or updates the sample expenses and their splits.
 
-**Note:** The current seed script creates demo users, a group, and group memberships. It does not create sample expenses or settlements.
+**Important:** Running the seed script again resets both demo users' passwords to the current `SEED_DEMO_PASSWORD` value. Both demo accounts use the same configured demo password.
 
-### 6. Start the backend
+### 8. Start the backend
 
-From the `backend` directory:
+From the backend directory:
 
 ```powershell
 npm run start:dev
 ```
 
-The backend is expected to run at:
+The backend runs at:
 
 `http://localhost:3000`
 
-### 7. Start the frontend
+### 9. Start the frontend
 
 Open a second terminal from the project root:
 
 ```powershell
 cd frontend
-npm install
 npm run dev
 ```
 
 Open the local URL provided by Vite, normally:
 
 `http://localhost:5173`
+
+You can now register your own accounts or use the seeded demo accounts.
 
 ## Data and Security Design
 
@@ -269,7 +325,7 @@ SplitMate uses Socket.IO for real-time communication instead of relying on perio
 Run from the `backend` directory:
 
 ```powershell
-npm test
+npm test -- --runInBand
 npm run build
 ```
 
@@ -285,11 +341,13 @@ npm run build
 
 SplitMate is under active development.
 
-Core workflows are being implemented and tested, including authentication, group management, expense splitting, balance calculations, settlements, activity history, and real-time communication.
+The project includes core workflows for authentication, group management, expense splitting, balance calculations, settlements, activity history, and real-time communication.
+
+Automated backend tests and frontend/backend production builds are included.
 
 ## Demo Walkthrough
 
-The planned demonstration covers:
+The project demonstration covers:
 
 1. Registering and logging in with two users.
 2. Creating a group and adding another member.
