@@ -8,10 +8,12 @@ import type { Request, Response } from 'express';
 export const CSRF_COOKIE_NAME = 'csrfToken';
 export const CSRF_HEADER_NAME = 'x-csrf-token';
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
 const COOKIE_OPTIONS = {
   httpOnly: false,
-  secure: false, // Local development only; use true with HTTPS in production.
-  sameSite: 'lax' as const,
+  secure: IS_PRODUCTION,
+  sameSite: IS_PRODUCTION ? ('none' as const) : ('lax' as const),
   path: '/api/v1',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
@@ -27,17 +29,21 @@ export function issueCsrfToken(response: Response): string {
 export function clearCsrfToken(response: Response): void {
   response.clearCookie(CSRF_COOKIE_NAME, {
     httpOnly: false,
-    secure: false,
-    sameSite: 'lax',
+    secure: IS_PRODUCTION,
+    sameSite: IS_PRODUCTION ? 'none' : 'lax',
     path: '/api/v1',
   });
 }
 
 export function validateRequestOrigin(request: Request): void {
-  const expectedOrigin = process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173';
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'https://split-mate-silk-three.vercel.app',
+  ];
+
   const origin = request.get('origin');
 
-  if (origin !== expectedOrigin) {
+  if (!origin || !allowedOrigins.includes(origin)) {
     throw new ForbiddenException('Request origin is not allowed.');
   }
 }

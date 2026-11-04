@@ -17,7 +17,10 @@ import { Namespace, Socket } from 'socket.io';
 @WebSocketGateway({
   namespace: '/realtime',
   cors: {
-    origin: 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173',
+      'https://split-mate-silk-three.vercel.app',
+    ],
     credentials: true,
   },
 })
