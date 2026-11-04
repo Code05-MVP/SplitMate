@@ -1,7 +1,8 @@
 
 import { io, type Socket } from 'socket.io-client';
 
-const REALTIME_URL = 'http://localhost:3000/realtime';
+const REALTIME_URL =
+  import.meta.env.VITE_REALTIME_URL || 'http://localhost:3000/realtime';
 
 export function createRealtimeSocket(
   getAccessToken: () => string | null,
